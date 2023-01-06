@@ -1,23 +1,25 @@
 #pragma once
-
-class GameObject;
-class Transform;
+#include "Object.h"
 
 enum class COMPONENT_TYPE : uint8
 {
 	TRANSFORM,
 	MESH_RENDERER,
-	//...
+	CAMERA,
+	// ...
 	MONO_BEHAVIOUR,
 	END,
 };
 
 enum
 {
-	FIXED_COMPONENT_COUNT = static_cast<uint8>(COMPONENT_TYPE::END) -1
+	FIXED_COMPONENT_COUNT = static_cast<uint8>(COMPONENT_TYPE::END) - 1
 };
 
-class Component
+class GameObject;
+class Transform;
+
+class Component : public Object
 {
 public:
 	Component(COMPONENT_TYPE type);
@@ -28,6 +30,7 @@ public:
 	virtual void Start() { }
 	virtual void Update() { }
 	virtual void LateUpdate() { }
+	virtual void FinalUpdate() { }
 
 public:
 	COMPONENT_TYPE GetType() { return _type; }
@@ -40,11 +43,8 @@ private:
 	friend class GameObject;
 	void SetGameObject(shared_ptr<GameObject> gameObject) { _gameObject = gameObject; }
 
-
 protected:
 	COMPONENT_TYPE _type;
 	weak_ptr<GameObject> _gameObject;
-
-
 };
 
