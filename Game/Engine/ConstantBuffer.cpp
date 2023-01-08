@@ -19,9 +19,10 @@ ConstantBuffer::~ConstantBuffer()
 
 
 
-void ConstantBuffer::Init(CBV_REGISTER reg,uint32 size, uint32 count)
+void ConstantBuffer::Init(CBV_REGISTER reg, uint32 size, uint32 count)
 {
 	_reg = reg;
+
 	// 상수 버퍼는 256 바이트 배수로 만들어야 한다
 	// 0 256 512 768
 	_elementSize = (size + 255) & ~255;
@@ -65,16 +66,13 @@ void ConstantBuffer::CreateView()
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE cbvHandle = GetCpuHandle(i);
 
-		// 버퍼 설명 (주소, 크기)
 		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 		cbvDesc.BufferLocation = _cbvBuffer->GetGPUVirtualAddress() + static_cast<uint64>(_elementSize) * i;
 		cbvDesc.SizeInBytes = _elementSize;   // CB size is required to be 256-byte aligned.
 
-		// CBV 만듦
 		DEVICE->CreateConstantBufferView(&cbvDesc, cbvHandle);
 	}
 }
-
 
 void ConstantBuffer::Clear()
 {
@@ -84,7 +82,7 @@ void ConstantBuffer::Clear()
 void ConstantBuffer::PushData(void* buffer, uint32 size)
 {
 	assert(_currentIndex < _elementCount);
-	assert(_elementSize ==((size+255) & ~255));
+	assert(_elementSize == ((size + 255) & ~255));
 
 	::memcpy(&_mappedBuffer[_currentIndex * _elementSize], buffer, size);
 
@@ -94,9 +92,15 @@ void ConstantBuffer::PushData(void* buffer, uint32 size)
 	_currentIndex++;
 }
 
+void ConstantBuffer::SetGlobalData(void* buffer, uint32 size)
+{
+	assert(_elementSize == ((size + 255) & ~255));
+	::memcpy(&_mappedBuffer[0], buffer, size);
+	CMD_LIST->SetGraphicsRootConstantBufferView(0, GetGpuVirtualAddress(0));
+}
+
 D3D12_GPU_VIRTUAL_ADDRESS ConstantBuffer::GetGpuVirtualAddress(uint32 index)
 {
-	// 시작주소 받아오고 -> 계산
 	D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = _cbvBuffer->GetGPUVirtualAddress();
 	objCBAddress += index * _elementSize;
 	return objCBAddress;

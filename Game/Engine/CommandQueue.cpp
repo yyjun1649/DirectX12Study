@@ -94,7 +94,7 @@ void CommandQueue::RenderBegin(const D3D12_VIEWPORT* vp, const D3D12_RECT* rect)
 	// Specify the buffers we are going to render to.
 	// 백버퍼를 꺼내온 후 GPU에게 알려줌
 	D3D12_CPU_DESCRIPTOR_HANDLE backBufferView = _swapChain->GetBackRTV();
-	_cmdList->ClearRenderTargetView(backBufferView, Colors::LightSteelBlue, 0, nullptr);
+	_cmdList->ClearRenderTargetView(backBufferView, Colors::Black, 0, nullptr);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE depthStencilView = GEngine->GetDepthStencilBuffer()->GetDSVCpuHandle();
 	_cmdList->OMSetRenderTargets(1, &backBufferView, FALSE, &depthStencilView);

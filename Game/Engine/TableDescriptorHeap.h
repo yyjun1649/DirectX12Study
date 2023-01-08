@@ -9,6 +9,7 @@ public:
 	void Clear();
 	void SetCBV(D3D12_CPU_DESCRIPTOR_HANDLE srcHandle, CBV_REGISTER reg);
 	void SetSRV(D3D12_CPU_DESCRIPTOR_HANDLE srcHandle, SRV_REGISTER reg);
+
 	void CommitTable();
 
 	ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap() { return _descHeap; }

@@ -12,7 +12,6 @@ Shader::~Shader()
 
 }
 
-
 void Shader::Init(const wstring& path)
 {
 	CreateVertexShader(path, "VS_Main", "vs_5_0");
