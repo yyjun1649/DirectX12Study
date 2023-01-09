@@ -1,12 +1,36 @@
 #pragma once
 #include "Object.h"
 
+enum class RASTERIZER_TYPE
+{
+	CULL_NONE,
+	CULL_FRONT,
+	CULL_BACK,
+	WIREFRAME,
+};
+
+enum class DEPTH_STENCIL_TYPE
+{
+	LESS,
+	LESS_EQUAL,
+	GREATER,
+	GREATER_EQUAL,
+};
+
+struct ShaderInfo
+{
+	// 기본 상태, 반시계방향
+	RASTERIZER_TYPE rasterizerType = RASTERIZER_TYPE::CULL_BACK;
+	// 적을 때만 그림.
+	DEPTH_STENCIL_TYPE depthStencilType = DEPTH_STENCIL_TYPE::LESS;
+};
+
 class Shader : public Object
 {
 public:
 	Shader();
 	virtual ~Shader();
-	void Init(const wstring& path);
+	void Init(const wstring& path, ShaderInfo info = ShaderInfo());
 	void Update();
 
 private:
