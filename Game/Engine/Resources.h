@@ -25,9 +25,9 @@ public:
 	template<typename T>
 	OBJECT_TYPE GetObjectType();
 
+	shared_ptr<Mesh> LoadRectangleMesh();
 	shared_ptr<Mesh> LoadCubeMesh();
 	shared_ptr<Mesh> LoadSphereMesh();
-	shared_ptr<Mesh> LoadRectangleMesh();
 
 	shared_ptr<Texture> CreateTexture(const wstring& name, DXGI_FORMAT format, uint32 width, uint32 height,
 		const D3D12_HEAP_PROPERTIES& heapProperty, D3D12_HEAP_FLAGS heapFlags,
@@ -35,13 +35,14 @@ public:
 
 	shared_ptr<Texture> CreateTextureFromResource(const wstring& name, ComPtr<ID3D12Resource> tex2D);
 
+
 private:
 	void CreateDefaultShader();
+	void CreateDefaultMaterial();
 
 private:
 	using KeyObjMap = std::map<wstring/*key*/, shared_ptr<Object>>;
 	array<KeyObjMap, OBJECT_TYPE_COUNT> _resources;
-
 };
 
 template<typename T>

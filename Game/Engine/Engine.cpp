@@ -2,24 +2,27 @@
 #include "Engine.h"
 #include "Material.h"
 #include "Transform.h"
-#include "Light.h"
-
 #include "Input.h"
 #include "Timer.h"
 #include "SceneManager.h"
+#include "Light.h"
 #include "Resources.h"
+
 void Engine::Init(const WindowInfo& info)
 {
 	_window = info;
+
 	// 그려질 화면 크기를 설정
 	_viewport = { 0, 0, static_cast<FLOAT>(info.width), static_cast<FLOAT>(info.height), 0.0f, 1.0f };
 	_scissorRect = CD3DX12_RECT(0, 0, info.width, info.height);
 
-	_device				->Init();
-	_cmdQueue			->Init(_device->GetDevice(), _swapChain);
-	_swapChain			->Init(_window,_device->GetDevice(), _device->GetDXGI(), _cmdQueue->GetCmdQueue());
-	_rootSignature		->Init();
-	_tableDescHeap		->Init(256);
+	_device->Init();
+	_graphicsCmdQueue->Init(_device->GetDevice(), _swapChain);
+	_computeCmdQueue->Init(_device->GetDevice());
+	_swapChain->Init(info, _device->GetDevice(), _device->GetDXGI(), _graphicsCmdQueue->GetCmdQueue());
+	_rootSignature->Init();
+	_graphicsDescHeap->Init(256);
+	_computeDescHeap->Init();
 
 	CreateConstantBuffer(CBV_REGISTER::b0, sizeof(LightParams), 1);
 	CreateConstantBuffer(CBV_REGISTER::b1, sizeof(TransformParams), 256);
@@ -27,13 +30,12 @@ void Engine::Init(const WindowInfo& info)
 
 	CreateRenderTargetGroups();
 
-	ResizeWindow(_window.width, _window.height);
+	ResizeWindow(info.width, info.height);
 
 	GET_SINGLE(Input)->Init(info.hwnd);
 	GET_SINGLE(Timer)->Init();
 	GET_SINGLE(Resources)->Init();
 }
-
 
 void Engine::Update()
 {
@@ -43,41 +45,39 @@ void Engine::Update()
 
 	Render();
 
-	ShowFPS();
+	ShowFps();
 }
 
 void Engine::Render()
 {
 	RenderBegin();
 
-	// TODO : 나머지 물체를 그려줌
 	GET_SINGLE(SceneManager)->Render();
-
 
 	RenderEnd();
 }
 
 void Engine::RenderBegin()
 {
-	_cmdQueue->RenderBegin(&_viewport, &_scissorRect);
+	_graphicsCmdQueue->RenderBegin(&_viewport, &_scissorRect);
 }
 
 void Engine::RenderEnd()
 {
-	_cmdQueue->RenderEnd();
+	_graphicsCmdQueue->RenderEnd();
 }
 
 void Engine::ResizeWindow(int32 width, int32 height)
 {
-	_window.width	= width;
-	_window.height	= height;
+	_window.width = width;
+	_window.height = height;
 
 	RECT rect = { 0, 0, width, height };
 	::AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, false);
 	::SetWindowPos(_window.hwnd, 0, 100, 100, width, height, 0);
 }
 
-void Engine::ShowFPS()
+void Engine::ShowFps()
 {
 	uint32 fps = GET_SINGLE(Timer)->GetFps();
 
@@ -96,6 +96,7 @@ void Engine::CreateConstantBuffer(CBV_REGISTER reg, uint32 bufferSize, uint32 co
 	buffer->Init(reg, bufferSize, count);
 	_constantBuffers.push_back(buffer);
 }
+
 
 void Engine::CreateRenderTargetGroups()
 {
@@ -143,5 +144,23 @@ void Engine::CreateRenderTargetGroups()
 
 		_rtGroups[static_cast<uint8>(RENDER_TARGET_GROUP_TYPE::G_BUFFER)] = make_shared<RenderTargetGroup>();
 		_rtGroups[static_cast<uint8>(RENDER_TARGET_GROUP_TYPE::G_BUFFER)]->Create(RENDER_TARGET_GROUP_TYPE::G_BUFFER, rtVec, dsTexture);
+	}
+
+	// Lighting Group
+	{
+		vector<RenderTarget> rtVec(RENDER_TARGET_LIGHTING_GROUP_MEMBER_COUNT);
+
+		rtVec[0].target = GET_SINGLE(Resources)->CreateTexture(L"DiffuseLightTarget",
+			DXGI_FORMAT_R8G8B8A8_UNORM, _window.width, _window.height,
+			CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+
+		rtVec[1].target = GET_SINGLE(Resources)->CreateTexture(L"SpecularLightTarget",
+			DXGI_FORMAT_R8G8B8A8_UNORM, _window.width, _window.height,
+			CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
+			D3D12_HEAP_FLAG_NONE, D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET);
+
+		_rtGroups[static_cast<uint8>(RENDER_TARGET_GROUP_TYPE::LIGHTING)] = make_shared<RenderTargetGroup>();
+		_rtGroups[static_cast<uint8>(RENDER_TARGET_GROUP_TYPE::LIGHTING)]->Create(RENDER_TARGET_GROUP_TYPE::LIGHTING, rtVec, dsTexture);
 	}
 }

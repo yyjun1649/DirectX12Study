@@ -32,9 +32,6 @@ void Camera::FinalUpdate()
 	else
 		_matProjection = ::XMMatrixOrthographicLH(width * _scale, height * _scale, _near, _far);
 
-	S_MatView = _matView;
-	S_MatProjection = _matProjection;
-
 	_frustum.FinalUpdate();
 }
 
@@ -46,7 +43,6 @@ void Camera::SortGameObject()
 	_vecForward.clear();
 	_vecDeferred.clear();
 
-	// Culling이 안된 물체만 찾아서 ShaderType을 찾아와 각 벡터에 입력
 	for (auto& gameObject : gameObjects)
 	{
 		if (gameObject->GetMeshRenderer() == nullptr)
