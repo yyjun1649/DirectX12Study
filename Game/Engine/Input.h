@@ -1,6 +1,5 @@
 #pragma once
 
-
 enum class KEY_TYPE
 {
 	UP = VK_UP,
@@ -12,10 +11,16 @@ enum class KEY_TYPE
 	A = 'A',
 	S = 'S',
 	D = 'D',
+
 	Q = 'Q',
 	E = 'E',
 	Z = 'Z',
 	C = 'C',
+
+	KEY_1 = 'U',
+	KEY_2 = 'I',
+	KEY_3 = 'O',
+	KEY_4 = 'P',
 
 	LBUTTON = VK_LBUTTON,
 	RBUTTON = VK_RBUTTON,
@@ -25,8 +30,8 @@ enum class KEY_STATE
 {
 	NONE,
 	PRESS,
-	UP,
 	DOWN,
+	UP,
 	END
 };
 
@@ -39,12 +44,16 @@ enum
 class Input
 {
 	DECLARE_SINGLE(Input);
+
 public:
 	void Init(HWND hwnd);
 	void Update();
 
+	// 누르고 있을 때
 	bool GetButton(KEY_TYPE key) { return GetState(key) == KEY_STATE::PRESS; }
+	// 맨 처음 눌렀을 때
 	bool GetButtonDown(KEY_TYPE key) { return GetState(key) == KEY_STATE::DOWN; }
+	// 맨 처음 눌렀다 뗐을 때
 	bool GetButtonUp(KEY_TYPE key) { return GetState(key) == KEY_STATE::UP; }
 
 	const POINT& GetMousePos() { return _mousePos; }

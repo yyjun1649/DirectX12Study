@@ -41,7 +41,7 @@ private:
 	uint32							_maxParticle = 1000;
 
 	shared_ptr<Material>		_computeMaterial;
-	shared_ptr<Material>		_material;
+	shared_ptr<Material>		_materials;
 	shared_ptr<Mesh>			_mesh;
 
 	float				_createInterval = 0.005f;

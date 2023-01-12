@@ -21,21 +21,20 @@ public:
 	MeshRenderer();
 	virtual ~MeshRenderer();
 
-	void SetMesh(shared_ptr<Mesh> mesh) { _mesh = mesh; }
-	void SetMaterial(shared_ptr<Material> material) { _material = material; }
+	shared_ptr<Mesh> GetMesh() { return _mesh; }
+	shared_ptr<Material> GetMaterial(uint32 idx = 0) { return _materials[idx]; }
 
-	shared_ptr<Material> GetMaterial() { return _material; }
+	void SetMesh(shared_ptr<Mesh> mesh) { _mesh = mesh; }
+	void SetMaterial(shared_ptr<Material> material, uint32 idx = 0);
 
 	void Render();
 	void Render(shared_ptr<class InstancingBuffer>& buffer);
 	void RenderShadow();
 
-
-
 	uint64 GetInstanceID();
 
 private:
 	shared_ptr<Mesh> _mesh;
-	shared_ptr<Material> _material;
+	vector<shared_ptr<Material>> _materials;
 };
 

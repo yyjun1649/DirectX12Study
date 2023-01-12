@@ -15,11 +15,11 @@ ParticleSystem::ParticleSystem() : Component(COMPONENT_TYPE::PARTICLE_SYSTEM)
 	_computeSharedBuffer->Init(sizeof(ComputeSharedInfo), 1);
 
 	_mesh = GET_SINGLE(Resources)->LoadPointMesh();
-	_material = GET_SINGLE(Resources)->Get<Material>(L"Particle");
+	_materials = GET_SINGLE(Resources)->Get<Material>(L"Particle");
 	shared_ptr<Texture> tex = GET_SINGLE(Resources)->Load<Texture>(
 		L"Bubbles", L"..\\Resources\\Texture\\Particle\\bubble.png");
 
-	_material->SetTexture(0, tex);
+	_materials->SetTexture(0, tex);
 
 	_computeMaterial = GET_SINGLE(Resources)->Get<Material>(L"ComputeParticle");
 }
@@ -56,9 +56,9 @@ void ParticleSystem::Render()
 	GetTransform()->PushData();
 
 	_particleBuffer->PushGraphicsData(SRV_REGISTER::t9);
-	_material->SetFloat(0, _startScale);
-	_material->SetFloat(1, _endScale);
-	_material->PushGraphicsData();
+	_materials->SetFloat(0, _startScale);
+	_materials->SetFloat(1, _endScale);
+	_materials->PushGraphicsData();
 
 	_mesh->Render(_maxParticle);
 }
