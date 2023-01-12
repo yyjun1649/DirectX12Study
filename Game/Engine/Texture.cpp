@@ -28,6 +28,8 @@ void Texture::Load(const wstring& path)
 	if (FAILED(hr))
 		assert(nullptr);
 
+	_desc = _tex2D->GetDesc();
+
 	vector<D3D12_SUBRESOURCE_DATA> subResources;
 
 	hr = ::PrepareUpload(DEVICE.Get(),
@@ -85,8 +87,8 @@ void Texture::Create(DXGI_FORMAT format, uint32 width, uint32 height,
 	const D3D12_HEAP_PROPERTIES& heapProperty, D3D12_HEAP_FLAGS heapFlags,
 	D3D12_RESOURCE_FLAGS resFlags, Vec4 clearColor)
 {
-	D3D12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
-	desc.Flags = resFlags;
+	_desc = CD3DX12_RESOURCE_DESC::Tex2D(format, width, height);
+	_desc.Flags = resFlags;
 
 	D3D12_CLEAR_VALUE optimizedClearValue = {};
 	D3D12_CLEAR_VALUE* pOptimizedClearValue = nullptr;
@@ -111,7 +113,7 @@ void Texture::Create(DXGI_FORMAT format, uint32 width, uint32 height,
 	HRESULT hr = DEVICE->CreateCommittedResource(
 		&heapProperty,
 		heapFlags,
-		&desc,
+		&_desc,
 		resourceStates,
 		pOptimizedClearValue,
 		IID_PPV_ARGS(&_tex2D));
@@ -125,13 +127,13 @@ void Texture::CreateFromResource(ComPtr<ID3D12Resource> tex2D)
 {
 	_tex2D = tex2D;
 
-	D3D12_RESOURCE_DESC desc = tex2D->GetDesc();
+	_desc = tex2D->GetDesc();
 
 	// 주요 조합
 	// - DSV 단독 (조합X)
 	// - SRV
 	// - RTV + SRV
-	if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)
+	if (_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL)
 	{
 		// DSV
 		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
@@ -146,7 +148,7 @@ void Texture::CreateFromResource(ComPtr<ID3D12Resource> tex2D)
 	}
 	else
 	{
-		if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)
+		if (_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)
 		{
 			// RTV
 			D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
@@ -160,7 +162,7 @@ void Texture::CreateFromResource(ComPtr<ID3D12Resource> tex2D)
 			DEVICE->CreateRenderTargetView(_tex2D.Get(), nullptr, rtvHeapBegin);
 		}
 
-		if (desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+		if (_desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
 		{
 			// UAV
 			D3D12_DESCRIPTOR_HEAP_DESC uavHeapDesc = {};

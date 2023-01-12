@@ -2,6 +2,8 @@
 #include "Mesh.h"
 #include "Engine.h"
 #include "Material.h"
+#include "InstancingBuffer.h"
+
 
 Mesh::Mesh() : Object(OBJECT_TYPE::MESH)
 {
@@ -19,22 +21,25 @@ void Mesh::Init(const vector<Vertex>& vertexBuffer, const vector<uint32>& indexB
 	CreateIndexBuffer(indexBuffer);
 }
 
-void Mesh::Render()
+void Mesh::Render(uint32 instanceCount)
 {
-	// CMD List / RenderBegin() 과 RenderEnd() 사이에서 호출
-	GRAPHICS_CMD_LIST->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	GRAPHICS_CMD_LIST->IASetVertexBuffers(0, 1, &_vertexBufferView); // Slot: (0~15) View를 통해 전달
+	GRAPHICS_CMD_LIST->IASetVertexBuffers(0, 1, &_vertexBufferView); // Slot: (0~15)
 	GRAPHICS_CMD_LIST->IASetIndexBuffer(&_indexBufferView);
-
-	// TODO
-	// 2) Buffer의 주소를 register에다가 전송
-	// 1번 (즉시)   2번 (나중에)
-	// 2) TableDescHeap에다가 CBV전달
-	// 3) 모든 세팅이 끝났으면 TableDescHeap 커밋
 
 	GEngine->GetGraphicsDescHeap()->CommitTable();
 
-	GRAPHICS_CMD_LIST->DrawIndexedInstanced(_indexCount, 1, 0, 0, 0);
+	GRAPHICS_CMD_LIST->DrawIndexedInstanced(_indexCount, instanceCount, 0, 0, 0);
+}
+
+void Mesh::Render(shared_ptr<InstancingBuffer>& buffer)
+{
+	D3D12_VERTEX_BUFFER_VIEW bufferViews[] = { _vertexBufferView, buffer->GetBufferView() };
+	GRAPHICS_CMD_LIST->IASetVertexBuffers(0, 2, bufferViews);
+	GRAPHICS_CMD_LIST->IASetIndexBuffer(&_indexBufferView);
+
+	GEngine->GetGraphicsDescHeap()->CommitTable();
+
+	GRAPHICS_CMD_LIST->DrawIndexedInstanced(_indexCount, buffer->GetCount(), 0, 0, 0);
 }
 
 void Mesh::CreateVertexBuffer(const vector<Vertex>& buffer)
@@ -51,20 +56,17 @@ void Mesh::CreateVertexBuffer(const vector<Vertex>& buffer)
 		&desc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(&_vertexBuffer)); // GPU 안에있는 공간
+		IID_PPV_ARGS(&_vertexBuffer));
 
-	// 따라서 두단계를 통해 전달
-	// 1) Buffer에다가 데이터 세팅 => 이후 Render의 TODO로
 	// Copy the triangle data to the vertex buffer.
-	void* vertexDataBuffer = nullptr; // 잠시 데이터 복사
+	void* vertexDataBuffer = nullptr;
 	CD3DX12_RANGE readRange(0, 0); // We do not intend to read from this resource on the CPU.
 	_vertexBuffer->Map(0, &readRange, &vertexDataBuffer);
-	::memcpy(vertexDataBuffer, &buffer[0], bufferSize); // GPU 메모리에 Copy
-	_vertexBuffer->Unmap(0, nullptr); // 뚜껑 다시 덮음
+	::memcpy(vertexDataBuffer, &buffer[0], bufferSize);
+	_vertexBuffer->Unmap(0, nullptr);
 
 	// Initialize the vertex buffer view.
-	// GPU가 View를 통해 어떤걸 가르키고 있는지 판별 
-	_vertexBufferView.BufferLocation = _vertexBuffer->GetGPUVirtualAddress(); // 어디에 있는지
+	_vertexBufferView.BufferLocation = _vertexBuffer->GetGPUVirtualAddress();
 	_vertexBufferView.StrideInBytes = sizeof(Vertex); // 정점 1개 크기
 	_vertexBufferView.SizeInBytes = bufferSize; // 버퍼의 크기	
 }
